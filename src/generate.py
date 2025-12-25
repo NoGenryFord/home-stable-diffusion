@@ -1,8 +1,11 @@
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline
 import torch
+import torch.nn.functional as F
+from PIL import Image
 
 
-def generate_image(user_prompt: str = None):
+# Main function to generate image
+def generate_image(user_prompt: str = None, save_dir: str = "./output/base_gen/"):
     # cheick if avaible MPS or CUDA
     if torch.backends.mps.is_available():
         device = "mps"
@@ -16,19 +19,32 @@ def generate_image(user_prompt: str = None):
 
     # Loading model
     print("Loading model...")
-    pipe = StableDiffusionPipeline.from_pretrained(
+    txt2img = StableDiffusionPipeline.from_pretrained(
+        "runwayml/stable-diffusion-v1-5",  # Or "stabilityai/stable-diffusion-2-1"
+        torch_dtype=torch.float32,
+        safety_checker=None,  # Disabling safety checker for speed
+    )
+    img2img = StableDiffusionImg2ImgPipeline.from_pretrained(
         "runwayml/stable-diffusion-v1-5",  # Or "stabilityai/stable-diffusion-2-1"
         torch_dtype=torch.float32,
         safety_checker=None,  # Disabling safety checker for speed
     )
 
-    pipe.vae = pipe.vae.to(device, dtype=torch.float32)
-    pipe.vae.eval()
-    pipe.vae.requires_grad_(False)
-    pipe.vae.config.force_upcast = True
+    # Moving VAE to device with float32 for better quality
+    txt2img.vae = txt2img.vae.to(device, dtype=torch.float32)
+    txt2img.vae.eval()
+    txt2img.vae.requires_grad_(False)
+    txt2img.vae.config.force_upcast = True
 
-    pipe = pipe.to(device)
-    pipe.enable_attention_slicing()
+    txt2img = txt2img.to(device)
+    txt2img.enable_attention_slicing()
+    print("✓ model txt2img loaded")
+    # For img2img
+    img2img.vae = txt2img.vae
+
+    img2img = img2img.to(device)
+    img2img.enable_attention_slicing()
+    print("✓ model img2img loaded")
 
     # Generating image
 
@@ -36,17 +52,35 @@ def generate_image(user_prompt: str = None):
 
     if prompt is None:
         prompt = "A high-resolution photo of a beautiful landscape, vibrant colors, detailed, professional photography"
-    print(f"Generating image: {prompt}")
+    print(f"Generating image...")
 
-    image = pipe(
+    # --- txt2img at 640x640 -> latent ---
+    result = txt2img(
         prompt,
-        num_inference_steps=20,  # Number of steps (more = higher quality but slower)
-        guidance_scale=7.0,  # How strongly to follow the prompt
         height=640,
         width=640,
-    ).images[0]
+        num_inference_steps=20,  # Number of steps (more = higher quality but slower)
+        guidance_scale=4.5,  # How strongly to follow the prompt
+    )
+
+    image = result.images[0]
+    print("✓ generation complete at 640x640")
+
+    # --- img2img denoise ---
+    print("Performing img2img denoise...")
+    result = img2img(
+        prompt=prompt,
+        image=image,
+        num_inference_steps=20,  # Number of steps (more = higher quality but slower)
+        guidance_scale=5.0,  # How strongly to follow the prompt
+        strength=0.25,  # Denoising strength
+        output_type="pil",
+    )
+
+    # Getting image from result
+    image = result.images[0]
+    print("✓ img2img denoise complete")
 
     # Saving
-    image.save("./output/base_gen/output.png")
-    print("✓ saved to output.png")
-    print("Done!")
+    image.save(f"{save_dir}output.png")
+    print(f"✓ saved to {save_dir}output.png")

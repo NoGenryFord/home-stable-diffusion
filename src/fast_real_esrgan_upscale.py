@@ -41,8 +41,3 @@ def fast_real_esrgan_upscale(img_input, model_path):
     output_img = output_tensor.squeeze(0).permute(1, 2, 0).clamp(0, 1).cpu().numpy()
     output_img = (output_img * 255).astype(np.uint8)
     return Image.fromarray(output_img)
-
-
-# Use example:
-# res = fast_real_esrgan_upscale("input_640.png", "RealESRGAN_x4plus.pth")
-# res.save("output_2560.png")
