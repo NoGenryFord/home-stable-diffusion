@@ -90,13 +90,13 @@ def generate_image(user_prompt: str = None, save_dir: str = "./output/base_gen/"
     print("✓ generation complete at 512x512")
 
     # --- img2img hi-res fix ---
-    hires_size = (768, 768)  # Final size after hi-res fix
+    hires_size = (1024, 1024)  # Final size after hi-res fix
     image_upscaled = image.resize(hires_size, resample=Image.LANCZOS)
     print("Performing img2img hi-res fix...")
     result = img2img(
         prompt=prompt,
-        image=image,
-        num_inference_steps=25,  # Number of steps (more = higher quality but slower)
+        image=image_upscaled,
+        num_inference_steps=35,  # Number of steps (more = higher quality but slower)
         guidance_scale=5.5,  # How strongly to follow the prompt
         strength=0.35,  # Denoising strength
         output_type="pil",
