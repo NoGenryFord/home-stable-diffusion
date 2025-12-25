@@ -49,6 +49,11 @@ def generate_image(user_prompt: str = None, save_dir: str = "./output/base_gen/"
     # Generating image
 
     prompt = user_prompt
+    negative_prompt = (
+        "low quality, worst quality, jpeg artifacts, "
+        "deformed, distorted, disfigured, mutation, "
+        "extra limbs, extra objects, collage, mosaic"
+    )
 
     if prompt is None:
         prompt = "A high-resolution photo of a beautiful landscape, vibrant colors, detailed, professional photography"
@@ -56,11 +61,12 @@ def generate_image(user_prompt: str = None, save_dir: str = "./output/base_gen/"
 
     # --- txt2img at 640x640 -> latent ---
     result = txt2img(
-        prompt,
+        prompt=prompt,
+        negative_prompt=negative_prompt,
         height=640,
         width=640,
-        num_inference_steps=20,  # Number of steps (more = higher quality but slower)
-        guidance_scale=4.5,  # How strongly to follow the prompt
+        num_inference_steps=25,  # Number of steps (more = higher quality but slower)
+        guidance_scale=6.0,  # How strongly to follow the prompt
     )
 
     image = result.images[0]
@@ -71,8 +77,8 @@ def generate_image(user_prompt: str = None, save_dir: str = "./output/base_gen/"
     result = img2img(
         prompt=prompt,
         image=image,
-        num_inference_steps=20,  # Number of steps (more = higher quality but slower)
-        guidance_scale=5.0,  # How strongly to follow the prompt
+        num_inference_steps=50,  # Number of steps (more = higher quality but slower)
+        guidance_scale=6.0,  # How strongly to follow the prompt
         strength=0.25,  # Denoising strength
         output_type="pil",
     )
