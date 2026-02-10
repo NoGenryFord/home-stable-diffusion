@@ -2,7 +2,6 @@ from diffusers import StableDiffusionPipeline, StableDiffusionImg2ImgPipeline
 from diffusers import DPMSolverMultistepScheduler
 from diffusers import AutoencoderKL
 import torch
-import torch.nn.functional as F
 from PIL import Image
 
 
@@ -11,13 +10,13 @@ def generate_image(user_prompt: str = None, save_dir: str = "./output/base_gen/"
     # cheick if avaible MPS or CUDA
     if torch.backends.mps.is_available():
         device = "mps"
-        print("✓ using MPS (Metal) (Apple Silicon)")
+        print("\u2713 using MPS (Metal) (Apple Silicon)")
     elif torch.cuda.is_available():
         device = "cuda"
-        print("✓ using CUDA (NVIDIA GPU)")
+        print("\u2713 using CUDA (NVIDIA GPU)")
     else:
         device = "cpu"
-        print("⚠ Using CPU")
+        print("\u26a0 Using CPU")
 
     # Loading model
     print("Loading model...")
@@ -46,20 +45,20 @@ def generate_image(user_prompt: str = None, save_dir: str = "./output/base_gen/"
 
     txt2img = txt2img.to(device)
     txt2img.enable_attention_slicing()
-    print("✓ model txt2img loaded")
+    print("\u2713 model txt2img loaded")
     # For img2img
     img2img.vae = better_vae
 
     img2img = img2img.to(device)
     img2img.enable_attention_slicing()
-    print("✓ model img2img loaded")
+    print("\u2713 model img2img loaded")
 
     # Setting scheduler to DPM++ 2M Karras
     txt2img.scheduler = DPMSolverMultistepScheduler.from_config(
         txt2img.scheduler.config, use_karras_sigmas=True, algorithm_type="dpmsolver++"
     )
     img2img.scheduler = txt2img.scheduler
-    print("✓ scheduler: DPM++ 2M Karras")
+    print("\u2713 scheduler: DPM++ 2M Karras")
 
     # Generating image
     prompt = user_prompt
@@ -87,11 +86,18 @@ def generate_image(user_prompt: str = None, save_dir: str = "./output/base_gen/"
     )
 
     image = result.images[0]
-    print("✓ generation complete at 512x512")
+    print("\u2713 generation complete at 512x512")
 
     # --- img2img hi-res fix ---
     hires_size = (1024, 1024)  # Final size after hi-res fix
-    image_upscaled = image.resize(hires_size, resample=Image.LANCZOS)
+    # Use Pillow's Resampling enum for compatibility with newer versions
+    try:
+        resample_filter = Image.Resampling.LANCZOS
+    except AttributeError:
+        # Fallback for older Pillow versions
+        resample_filter = Image.LANCZOS
+
+    image_upscaled = image.resize(hires_size, resample=resample_filter)
     print("Performing img2img hi-res fix...")
     result = img2img(
         prompt=prompt,
@@ -104,8 +110,8 @@ def generate_image(user_prompt: str = None, save_dir: str = "./output/base_gen/"
 
     # Getting image from result
     image = result.images[0]
-    print("✓ img2img denoise complete")
+    print("\u2713 img2img denoise complete")
 
     # Saving
     image.save(f"{save_dir}output.png")
-    print(f"✓ saved to {save_dir}output.png")
+    print(f"\u2713 saved to {save_dir}output.png")

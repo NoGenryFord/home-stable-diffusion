@@ -33,11 +33,42 @@ def fast_real_esrgan_upscale(img_input, model_path):
     # 3. Performing upscale
     with torch.no_grad():
         try:
-            output_tensor = model(img_tensor)
+            output = model(img_tensor)
         except RuntimeError as e:
-            return f"Memory error: {e}. Try x2 model or smaller image."
+            # Raise a proper exception so caller can handle it
+            raise RuntimeError(f"Memory error during upscaling: {e}. Try a smaller image or a x2 model.")
 
-    # 4. Returning to PIL format
-    output_img = output_tensor.squeeze(0).permute(1, 2, 0).clamp(0, 1).cpu().numpy()
-    output_img = (output_img * 255).astype(np.uint8)
+    # Model may return tensor directly or a tuple/dict
+    if isinstance(output, tuple) or isinstance(output, list):
+        output_tensor = output[0]
+    elif isinstance(output, dict):
+        # try common keys
+        for k in ("output", "pred", "image", "out"):
+            if k in output:
+                output_tensor = output[k]
+                break
+        else:
+            # fall back to first value
+            output_tensor = next(iter(output.values()))
+    else:
+        output_tensor = output
+
+    # Ensure tensor is on CPU and in [B, C, H, W]
+    if not isinstance(output_tensor, torch.Tensor):
+        raise TypeError(f"Model returned unexpected type: {type(output_tensor)}")
+
+    output_tensor = output_tensor.detach().cpu()
+
+    # If output is in [-1,1] range, convert; if in [0,1], keep
+    # Heuristics: check max/min
+    tmin = float(output_tensor.min())
+    tmax = float(output_tensor.max())
+    if tmin >= -1.1 and tmax <= 1.1:
+        # assume [-1,1]
+        output_tensor = (output_tensor + 1.0) / 2.0
+    # else assume already [0,1]
+
+    # Remove batch dim and move channels to last
+    output_tensor = output_tensor.squeeze(0).permute(1, 2, 0).clamp(0, 1).numpy()
+    output_img = (output_tensor * 255).astype(np.uint8)
     return Image.fromarray(output_img)
