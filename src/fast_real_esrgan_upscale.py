@@ -2,9 +2,23 @@ import torch
 from PIL import Image
 import numpy as np
 from spandrel import ModelLoader
+from typing import Union
 
 
-def fast_real_esrgan_upscale(img_input, model_path):
+def fast_real_esrgan_upscale(img_input: Union[str, Image.Image], model_path: str) -> Image.Image:
+    """Upscale an image with a RealESRGAN-compatible model via Spandrel.
+
+    Args:
+        img_input: Input image or file path to an image.
+        model_path: Path to a RealESRGAN model file (.pth).
+
+    Returns:
+        A PIL Image with the upscaled result.
+
+    Raises:
+        RuntimeError: If the model fails due to memory issues.
+        TypeError: If the model output type is unexpected.
+    """
     # 1. Loading model via Spandrel
     loader = ModelLoader()
     model = loader.load_from_file(model_path)

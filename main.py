@@ -2,7 +2,8 @@ import src.generate as generate
 import src.fast_real_esrgan_upscale as freu
 
 
-def check_output_dirs():
+def check_output_dirs() -> None:
+    """Ensure output folders exist for base generation and upscaled results."""
     import os
 
     base_gen_dir = "./output/base_gen/"
@@ -13,7 +14,8 @@ def check_output_dirs():
     print(f"\u2713 Output directories checked/created: {base_gen_dir}, {upscaled_dir}")
 
 
-def app():
+def app() -> None:
+    """Run the CLI flow: prompt input, generate base image, then upscale and save."""
     check_output_dirs()
 
     user_prompt = input("Enter your prompt (or press Enter for default): ")

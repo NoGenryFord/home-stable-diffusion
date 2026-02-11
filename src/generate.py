@@ -3,10 +3,17 @@ from diffusers import DPMSolverMultistepScheduler
 from diffusers import AutoencoderKL
 import torch
 from PIL import Image
+from typing import Optional
 
 
 # Main function to generate image
-def generate_image(user_prompt: str = None, save_dir: str = "./output/base_gen/"):
+def generate_image(user_prompt: Optional[str] = None, save_dir: str = "./output/base_gen/") -> None:
+    """Generate a base image with Stable Diffusion and save it to disk.
+
+    Args:
+        user_prompt: Prompt text for generation. If None, a default prompt is used.
+        save_dir: Output directory where the base image is saved.
+    """
     # cheick if avaible MPS or CUDA
     if torch.backends.mps.is_available():
         device = "mps"
