@@ -109,7 +109,7 @@ def generate_image(user_prompt: Optional[str] = None, save_dir: str = "./output/
     result = img2img(
         prompt=prompt,
         image=image_upscaled,
-        num_inference_steps=35,  # Number of steps (more = higher quality but slower)
+        num_inference_steps=30,  # Number of steps (more = higher quality but slower)
         guidance_scale=5.5,  # How strongly to follow the prompt
         strength=0.35,  # Denoising strength
         output_type="pil",

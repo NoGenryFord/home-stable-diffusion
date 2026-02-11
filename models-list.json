@@ -1,0 +1,23 @@
+[
+  {
+    "model_name": "stable-diffusion-1.5",
+    "source": "Hugging Face",
+    "donwload_path": "runwayml/stable-diffusion-v1-5",
+    "model_type": "diffusers",
+    "purpose": "text-to-image"
+  },
+  {
+    "model_name": "VAE (Variational Autoencoder",
+    "source": "Hugging Face",
+    "donwload_path": "",
+    "model_type": "diffusers",
+    "purpose": "image-to-image"
+  },
+  {
+    "model_name": "RealESRGAN x4",
+    "source": "Hugging Face",
+    "donwload_path": "",
+    "model_type": "realesrgan",
+    "purpose": "image-to-image"
+  }
+]
